@@ -2,6 +2,7 @@
 
 #include "core/File.h"
 
+#include <iostream>
 #include <vector>
 
 namespace voxel {
@@ -40,8 +41,12 @@ bool Shader::Load(const std::string& vertexPath,
                  std::string& error) {
     const auto vertexBytes = ReadFile(vertexPath);
     const auto fragmentBytes = ReadFile(fragmentPath);
-    if (vertexBytes.empty() || fragmentBytes.empty()) {
-        error = "Could not read shader files: " + vertexPath + " and " + fragmentPath;
+    if (vertexBytes.empty()) {
+        error = "Could not read vertex shader file: " + vertexPath;
+        return false;
+    }
+    if (fragmentBytes.empty()) {
+        error = "Could not read fragment shader file: " + fragmentPath;
         return false;
     }
 
@@ -93,9 +98,13 @@ void Shader::Use() const {
 
 void Shader::SetMat4(const char* name, const glm::mat4& value) const {
     const GLint location = gl_.GetUniformLocation(program_, name);
-    if (location >= 0) {
-        gl_.UniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
+    if (location < 0) {
+        if (missingUniforms_.insert(name).second) {
+            std::cerr << "Shader uniform not found: " << name << '\n';
+        }
+        return;
     }
+    gl_.UniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
 }
 
 }

@@ -4,6 +4,7 @@
 
 #include <glm/mat4x4.hpp>
 
+#include <set>
 #include <string>
 
 namespace voxel {
@@ -27,6 +28,7 @@ private:
 
     GLApi& gl_;
     GLuint program_ = 0;
+    mutable std::set<std::string> missingUniforms_;
 };
 
 }

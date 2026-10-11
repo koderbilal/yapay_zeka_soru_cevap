@@ -9,12 +9,11 @@ This folder implements the first milestone in `../big/11-yol-haritasi.md`: an SD
 - SDL2
 - OpenGL
 - GLM
-- `stb_image.h` to read a PNG texture (optional for building)
 
 On Debian or Ubuntu:
 
 ```sh
-sudo apt install build-essential cmake libsdl2-dev libglm-dev libstb-dev
+sudo apt install build-essential cmake libsdl2-dev libglm-dev
 ```
 
 ## Build and run
@@ -24,11 +23,12 @@ From this directory:
 ```sh
 cmake -S . -B build
 cmake --build build
-cd build
-./VoxelEngine
+./build/VoxelEngine
 ```
 
-Add the Bedrock dirt texture at `assets/textures/blocks/dirt.png`. The texture is loaded from memory through `ReadFile` and filtered with `GL_NEAREST`. If the PNG or `stb_image.h` is unavailable, the program uses a generated placeholder texture.
+The dirt block texture is `assets/textures/blocks/dirt.png` (copied from the top-level `Assets/dirt.png`). `stb_image.h` is bundled in `include/`. Assets are copied next to the executable on every build, and files are looked up relative to the working directory first, then next to the executable. The texture is loaded from memory through `ReadFile` and filtered with `GL_NEAREST`; if the PNG is missing, a generated placeholder is used.
+
+Required shaders: `assets/shaders/cube.vert` and `assets/shaders/cube.frag`. The program exits if they are missing.
 
 ## Controls
 

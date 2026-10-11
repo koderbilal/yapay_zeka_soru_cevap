@@ -22,6 +22,9 @@ public:
     float Yaw = -90.0f;
     float Pitch = 0.0f;
     float Speed = 4.5f;
+    float Sensitivity = 0.1f;
+
+    Camera();
 
     glm::mat4 GetViewMatrix() const;
     void Move(CameraMove direction, float deltaTime);
