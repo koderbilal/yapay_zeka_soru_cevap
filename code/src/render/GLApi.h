@@ -8,6 +8,8 @@
 
 namespace voxel {
 
+// Function pointers for the OpenGL 3.3 core entry points the engine needs
+// (the SDL_opengl.h header only declares GL 1.1 symbols).
 struct GLApi {
     PFNGLGENVERTEXARRAYSPROC GenVertexArrays = nullptr;
     PFNGLDELETEVERTEXARRAYSPROC DeleteVertexArrays = nullptr;
@@ -34,6 +36,8 @@ struct GLApi {
     PFNGLGETUNIFORMLOCATIONPROC GetUniformLocation = nullptr;
     PFNGLUNIFORMMATRIX4FVPROC UniformMatrix4fv = nullptr;
 
+    // Resolves every pointer via SDL_GL_GetProcAddress; call after creating the
+    // context. On failure `error` names the missing function.
     bool Load(std::string& error) {
 #define VOXEL_LOAD_GL(member, symbol) \
         if (!LoadFunction(member, symbol, error)) return false
