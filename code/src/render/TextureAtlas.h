@@ -6,29 +6,31 @@
 
 namespace voxel {
 
-// Packs every tile listed in world/Registry into one GL_NEAREST texture.
+// Packs named 16x16 tiles into one GL_NEAREST texture. Animated strips
+// (water, lava) contribute their first frame; wider frames are scaled down.
 class TextureAtlas {
 public:
     static constexpr int kTileSize = 16;
-    static constexpr int kColumns = 8;
-    static constexpr int kRows = 8;
 
     TextureAtlas() = default;
     ~TextureAtlas();
     TextureAtlas(const TextureAtlas&) = delete;
     TextureAtlas& operator=(const TextureAtlas&) = delete;
 
-    // Loads assets/textures/blocks/<name>.png for each tile; a missing or
-    // non-16x16 file is replaced by a magenta checker so the game still runs.
-    // Requires a current GL context. Returns false on a GL error.
-    bool Build(std::string& error);
+    // `directory` is tried first (png, then tga), then each extra root.
+    bool Build(const char* const* names, int count, int columns,
+               const std::string& directory, std::string& error);
     void Bind() const;
+    int Columns() const { return columns_; }
+    int Rows() const { return rows_; }
 
-    // UV rectangle of a tile; v0 is the top edge of the image, v1 the bottom edge.
-    static void TileUV(int tile, float& u0, float& v0, float& u1, float& v1);
+    // v0 is the top edge of the tile, v1 the bottom edge.
+    void TileUV(int tile, float& u0, float& v0, float& u1, float& v1) const;
 
 private:
     GLuint texture_ = 0;
+    int columns_ = 1;
+    int rows_ = 1;
 };
 
 }

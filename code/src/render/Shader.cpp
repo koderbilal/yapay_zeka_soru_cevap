@@ -107,4 +107,22 @@ void Shader::SetMat4(const char* name, const glm::mat4& value) const {
     gl_.UniformMatrix4fv(location, 1, GL_FALSE, &value[0][0]);
 }
 
+void Shader::SetVec4(const char* name, const glm::vec4& value) const {
+    const GLint location = gl_.GetUniformLocation(program_, name);
+    if (location < 0) return;
+    gl_.Uniform4f(location, value.x, value.y, value.z, value.w);
+}
+
+void Shader::SetFloat(const char* name, float value) const {
+    const GLint location = gl_.GetUniformLocation(program_, name);
+    if (location < 0) return;
+    gl_.Uniform1f(location, value);
+}
+
+void Shader::SetInt(const char* name, int value) const {
+    const GLint location = gl_.GetUniformLocation(program_, name);
+    if (location < 0) return;
+    gl_.Uniform1i(location, value);
+}
+
 }

@@ -2,11 +2,11 @@
 
 Bu dosya projenin nerede olduğunu ve sırada ne olduğunu özetler. Ayrıntılı tasarım için `big/` klasörüne, sıralama için `big/11-yol-haritasi.md` dosyasına bak.
 
-**Şu an:** Mil 0 ve Mil 1 tamam, dünya üretimi ilk hâliyle eklendi. Sırada Mil 2 (beden) var.
+**Şu an:** Mil 0, 1 ve 2 tamam. Mil 3'ün envanter, hotbar, kırma süresi, düşen eşya, kalp ve çalışma masası kısmı da kodda. Sırada kalan Mil 3 artıkları (zırh giyme, fırın) ve Mil 4'ün ışık / gündüz-gece / chunk akışı kısmı.
 
 ## Proje
 
-C++ ile Minecraft benzeri bir sandbox / voxel oyunu. Özel motor kullanıyoruz: SDL2 (pencere, girdi), OpenGL 3.3 (çizim), GLM (matematik), CMake (derleme). Dokular Bedrock texture pack'inden geliyor ve `Assets/` klasöründe duruyor. İleride Android ve çok oyunculu destek planlı.
+C++ ile Minecraft benzeri bir sandbox / voxel oyunu. Özel motor: SDL2 (pencere, girdi), OpenGL 3.3 (çizim), GLM (matematik), CMake (derleme). Dokular Bedrock pack'inden: `Assets/`, `Extra/`, `Items/`. İleride Android ve çok oyunculu destek planlı.
 
 ## Yapılanlar
 
@@ -26,34 +26,47 @@ C++ ile Minecraft benzeri bir sandbox / voxel oyunu. Özel motor kullanıyoruz: 
 ### Mil 1 — yer (tamamlandı)
 - [x] `world/Registry`: blok kimlikleri, yüz başına doku, küp / çapraz şekil.
 - [x] `world/Chunk` (16×256×16), `world/World`, yüz eleme, chunk başına tek draw (`render/ChunkRenderer`).
-- [x] `render/TextureAtlas`: 19 doku tek atlasta, `GL_NEAREST`.
-- [x] Dünya üretimi (`world/WorldGen`): yükseklik gürültüsü, çöl/ova, granit-diyorit-andezit, mağara, cevherler, bedrock, ağaç gövdesi, fidan. Tohum: `VoxelEngine [seed]`.
-- [ ] Eksik: su, yaprak, çimen dokusu, ışık, dinamik chunk yükleme (Mil 4).
+- [x] `render/TextureAtlas`: blok ve eşya atlası, `GL_NEAREST`.
+- [x] Dünya üretimi (`world/WorldGen`): yükseklik, çöl/ova, katmanlar, mağara, cevher, bedrock. Tohum: `VoxelEngine [seed]`.
+
+### Mil 2 — beden (tamamlandı)
+- [x] `player/Player`: ayak konumu, 0.6×1.8 kutu, göz 1.62.
+- [x] Yerçekimi, zıplama, eksen eksen çarpışma, basamak çıkma.
+- [x] `F` ile creative uçuş (yerçekimi ve çarpışma yok).
+- [x] Işınla kırma (süre + alet çarpanı) ve sağ tıkla koyma. Artı imleç.
+- [x] Su yavaşlatır ve yüzdürür; lav ve kaktüs hasar verir. Ölünce doğuş noktasına dönüş.
+
+### Mil 3 — eşya (büyük kısmı)
+- [x] Hotbar (1–9 ve tekerlek), 36 yuva, `E` ile 2×2 envanter, çalışma masası sağ tık.
+- [x] Sol tık: al, birleştir, değiştir. Sonuç yuvası tarifi uygular.
+- [x] Tarifler: kütük→tahta, tahta→çubuk, 2×2 tahta→masa, tahta ve taş kazma/balta/kürek/çapa/kılıç.
+- [x] Alet dayanıklılığı. Düşen küp eşya, yaklaşınca hotbar sonra çanta.
+- [x] Kalpler kırmızı dörtgen olarak çizilir (kalp dokusu yok). Açlık alanı durur, mekanik yok.
+- [x] Envanter açıkken boş zırh ve kalkan yuvaları `empty_armor_slot_*` dokusunu gösterir. Uygun parça tıklanınca yuvaya girer; koruma hesabı yok.
+- [ ] Fırın, yemek sağ tık, zırhın hasar azaltması yok.
+
+### Dünya (Mil 4'ten erken gelenler)
+- [x] Çöl / ova, kırmızı kum, okyanus (deniz seviyesi 62), derin mağarada lav cebi.
+- [x] Çölde kaktüs (1–3) ve ölü çalı. Meşe gövdesi + 5×5 yaprak tacı.
+- [x] Su yalnızca açılan hücreden aşağı akar (yana taşmaz).
+- [ ] Yüz ışığı, AO, gündüz-gece, meşale, dinamik chunk yükleme, frustum yok.
 
 ### Dokular
-- [x] 19 blok dokusu `Assets/` içinde, dosya adı = blok adı: `bedrock`, `clay`, `coal_ore`, `cobblestone`, `dirt`, `gold_ore`, `gravel`, `iron_ore`, `lapis_ore`, `log_oak`, `log_oak_top`, `obsidian`, `planks_oak`, `sand`, `sapling_oak`, `stone`, `stone_andesite`, `stone_diorite`, `stone_granite`.
-- [x] Hepsi `code/assets/textures/blocks/` altına kopyalandı ve oyunda kullanılıyor (doku atlası).
+- [x] `Assets/` blokları ve `Extra/` (çimen, yaprak, kaktüs, su, lav, çalışma masası, çim yolu, kırmızı kum) `code/assets/textures/blocks/` altında.
+- [x] `Items/` eşyaları `code/assets/textures/items/` altında, kimlikler 256'dan başlar.
+- [x] Animasyon şeritleri (su, lav) ilk kareyi kullanır. Çimen ve yaprak yeşil tint alır.
 
 ## Sıradaki adımlar
 
-Kural: üstteki mil bitmeden alttakine kod yazılmaz. "Bitmek": ekranda görünür, kapanınca dünya durur, derleme temizdir.
-
 | Mil | Konu | Özet |
 |---|---|---|
-| 2 | Beden | Yerçekimi, zıplama, çarpışma, creative uçuş, ışınla blok kırma/koyma, artı işareti. |
-| 3 | Eşya | Hotbar, 36 yuvalı envanter, kalpler, kırma süresi, düşen eşya, çalışma masası ve ilk aletler. |
-| 4 | Dünya karakteri | Yükseklik + sıcaklık, biyomlar, ağaç, su, mağara, cevher damarları, ışık, gündüz-gece, meşale. İşçi havuzu ve frustum eleme. |
-| 5 | Hayat | Tavuk ve zombi, hasar, ölüm, parçacıklar, ses (miniaudio), yağmur/kar. |
-| 6 | Kapanıp açılma | Binary kayıt, Esc menüsü, ayarlar (JSON), FOV ve görüş mesafesi. |
-| 7 | Pahalı görüntü | Bloom, su altı efekti, gölge (ayarla açılıp kapanır). |
-| 8 | Telefon | Android: GLES, APK içinden dosya okuma, joystick ve dokunmatik kontrol. |
-| 9 | Ağ | `update` / `render` ayrımı, ENet, çok oyunculu, penceresiz sunucu. |
+| 3 kalan | Eşya | Zırh, fırın, yemek. Kalp/hotbar dokusu isteğe bağlı. |
+| 4 | Dünya karakteri | Işık, gündüz-gece, meşale, işçi havuzu, frustum, gerçek su akışı. |
+| 5 | Hayat | Tavuk ve zombi, hasar, parçacık, ses, yağmur/kar. |
+| 6 | Kayıt | Binary dünya, Esc menüsü, ayarlar. |
+| 7 | Görüntü | Bloom, su altı, gölge (kapalı varsayılan). |
+| 8 | Telefon | GLES, dokunmatik. |
+| 9 | Ağ | `update` / `render` ayrımı, ENet. |
 
-### Henüz tasarlanmamış (iskeleti açık)
-Açlık, boss, mod desteği, canlıların kaydı, greedy mesh, gerçek su akışı, A* ile zombi yolu.
-
-## Hemen yapılacaklar (Mil 1 için)
-1. `world/Chunk` ve `world/Registry` sınıflarını ekle.
-2. Blok dokularını tek bir atlasta birleştir.
-3. Yüz eleme ile chunk mesh'i üret.
-4. Düz bir arazi çiz ve kamerayı üstüne yerleştir.
+### Henüz yok
+Açlık mekaniği, boss, mod JSON, canlı kaydı, greedy mesh, yana su akışı, A* zombi yolu, kırılma parçacığı ve ses.

@@ -40,6 +40,32 @@ BlockId World::GetBlock(int x, int y, int z) const {
     return chunk->Get(x - cx * kChunkSizeX, y, z - cz * kChunkSizeZ);
 }
 
+bool World::SetBlock(int x, int y, int z, BlockId id) {
+    if (y < 0 || y >= kChunkSizeY) return false;
+    const int cx = FloorDiv(x, kChunkSizeX);
+    const int cz = FloorDiv(z, kChunkSizeZ);
+    Chunk* chunk = GetChunk(cx, cz);
+    if (chunk == nullptr) return false;
+    chunk->Set(x - cx * kChunkSizeX, y, z - cz * kChunkSizeZ, id);
+    return true;
+}
+
+int World::FlowWater(int x, int y, int z, int budget) {
+    // Only the opened cell is filled, then the water falls straight down.
+    // Sideways flooding is left to the next break, which will itself be adjacent.
+    auto isWater = [&](int nx, int ny, int nz) { return GetBlock(nx, ny, nz) == Block::Water; };
+    const bool adjacent = isWater(x, y + 1, z) || isWater(x + 1, y, z) || isWater(x - 1, y, z) ||
+                          isWater(x, y, z + 1) || isWater(x, y, z - 1);
+    if (!adjacent) return 0;
+
+    int filled = 0;
+    for (int cy = y; filled < budget && cy >= 0 && GetBlock(x, cy, z) == Block::Air; --cy) {
+        if (!SetBlock(x, cy, z, Block::Water)) break;
+        ++filled;
+    }
+    return filled;
+}
+
 int World::SurfaceHeight(int x, int z) const {
     for (int y = kChunkSizeY - 1; y >= 0; --y) {
         if (GetBlock(x, y, z) != Block::Air) return y;
