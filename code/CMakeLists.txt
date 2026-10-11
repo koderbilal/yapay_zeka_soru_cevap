@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)
-find_package(glm CONFIG REQUIRED)
+find_package(glm CONFIG QUIET)
 find_path(STB_IMAGE_INCLUDE_DIR stb_image.h PATH_SUFFIXES stb)
 
 file(GLOB_RECURSE VOXEL_ENGINE_SOURCES CONFIGURE_DEPENDS
@@ -31,7 +31,8 @@ endif()
 if(TARGET glm::glm)
     target_link_libraries(VoxelEngine PRIVATE glm::glm)
 else()
-    target_include_directories(VoxelEngine PRIVATE ${GLM_INCLUDE_DIRS})
+    find_path(GLM_INCLUDE_DIR glm/glm.hpp REQUIRED)
+    target_include_directories(VoxelEngine PRIVATE ${GLM_INCLUDE_DIR})
 endif()
 
 target_link_libraries(VoxelEngine PRIVATE OpenGL::GL)
