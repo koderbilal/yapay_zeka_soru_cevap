@@ -26,7 +26,7 @@ cmake --build build
 ./build/VoxelEngine
 ```
 
-The dirt block texture is `assets/textures/blocks/dirt.png` (copied from the top-level `Assets/dirt.png`). `stb_image.h` is bundled in `include/`. Assets are copied next to the executable on every build, and files are looked up relative to the working directory first, then next to the executable. The texture is loaded from memory through `ReadFile` and filtered with `GL_NEAREST`; if the PNG is missing, a generated placeholder is used.
+All block textures from the top-level `Assets/` folder are copied into `assets/textures/blocks/`; each file name is the block name (`bedrock`, `clay`, `coal_ore`, `cobblestone`, `dirt`, `gold_ore`, `gravel`, `iron_ore`, `lapis_ore`, `log_oak`, `log_oak_top`, `obsidian`, `planks_oak`, `sand`, `sapling_oak`, `stone`, `stone_andesite`, `stone_diorite`, `stone_granite`). Milestone 0 only renders `dirt.png`. `stb_image.h` is bundled in `include/`. Assets are copied next to the executable on every build, and files are looked up relative to the working directory first, then next to the executable. The texture is loaded from memory through `ReadFile` and filtered with `GL_NEAREST`; if the PNG is missing, a generated placeholder is used.
 
 Required shaders: `assets/shaders/cube.vert` and `assets/shaders/cube.frag`. The program exits if they are missing.
 
