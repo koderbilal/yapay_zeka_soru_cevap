@@ -1,13 +1,14 @@
 #pragma once
 
 #include "render/GLApi.h"
+#include "render/TextureAtlas.h"
 #include "world/World.h"
 
 #include <vector>
 
 namespace voxel {
 
-// One mesh and one draw call per chunk (see big/11-yol-haritasi.md, Mil 1).
+// One opaque mesh and one liquid mesh per chunk, each drawn in a single call.
 class ChunkRenderer {
 public:
     explicit ChunkRenderer(GLApi& gl) : gl_(gl) {}
@@ -15,28 +16,38 @@ public:
     ChunkRenderer(const ChunkRenderer&) = delete;
     ChunkRenderer& operator=(const ChunkRenderer&) = delete;
 
-    // Builds a mesh for every chunk currently loaded in `world`.
-    void BuildAll(const World& world);
-    void Draw() const;
+    void BuildAll(const World& world, const TextureAtlas& atlas);
+    // Rebuilds one chunk and its face-neighbours when a block on the edge changed.
+    void Rebuild(const World& world, const TextureAtlas& atlas, int chunkX, int chunkZ);
+    void DrawOpaque() const;
+    void DrawLiquid() const;
 
     std::size_t TriangleCount() const { return triangles_; }
 
 private:
     struct Mesh {
-        GLuint vao = 0;
-        GLuint vbo = 0;
-        GLsizei vertexCount = 0;
+        int chunkX = 0;
+        int chunkZ = 0;
+        GLuint opaqueVao = 0;
+        GLuint opaqueVbo = 0;
+        GLsizei opaqueCount = 0;
+        GLuint liquidVao = 0;
+        GLuint liquidVbo = 0;
+        GLsizei liquidCount = 0;
     };
 
-    void Clear();
+    void Upload(Mesh& mesh, const std::vector<float>& opaque, const std::vector<float>& liquid);
+    void Destroy(Mesh& mesh);
+    Mesh* Find(int chunkX, int chunkZ);
 
     GLApi& gl_;
     std::vector<Mesh> meshes_;
     std::size_t triangles_ = 0;
 };
 
-// Vertex layout: x, y, z, u, v, shade (6 floats). Only faces not hidden by an
-// opaque neighbour are emitted. Exposed separately so it can be tested without GL.
-std::vector<float> BuildChunkVertices(const World& world, const Chunk& chunk);
+// Vertex layout: x y z u v shade tint.rgb material alpha (11 floats).
+// material: 0 opaque, 1 cutout, 2 grass mask. alpha < 1 marks a liquid vertex.
+void BuildChunkVertices(const World& world, const Chunk& chunk, const TextureAtlas& atlas,
+                        std::vector<float>& opaque, std::vector<float>& liquid);
 
 }

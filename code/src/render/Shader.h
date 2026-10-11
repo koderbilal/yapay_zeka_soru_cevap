@@ -3,6 +3,7 @@
 #include "render/GLApi.h"
 
 #include <glm/mat4x4.hpp>
+#include <glm/vec4.hpp>
 
 #include <set>
 #include <string>
@@ -27,6 +28,9 @@ public:
     void Use() const;
     // Sets a mat4 uniform; a missing uniform is reported once on stderr, then ignored.
     void SetMat4(const char* name, const glm::mat4& value) const;
+    void SetVec4(const char* name, const glm::vec4& value) const;
+    void SetFloat(const char* name, float value) const;
+    void SetInt(const char* name, int value) const;
 
 private:
     GLuint Compile(GLenum type, const std::string& source, std::string& error);

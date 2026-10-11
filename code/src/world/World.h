@@ -23,6 +23,11 @@ public:
 
     // World coordinates. Unloaded space and y outside [0, 256) read as Air.
     BlockId GetBlock(int x, int y, int z) const;
+    // Writes a loaded chunk. Returns false when the chunk is not loaded or y is out of range.
+    bool SetBlock(int x, int y, int z, BlockId id);
+    // Fills air that a removed block just exposed, so oceans pour into holes.
+    // Spreads at most `budget` blocks and returns how many were filled.
+    int FlowWater(int x, int y, int z, int budget);
 
     // Height of the highest non-air block in a column, or -1 if the column is empty/unloaded.
     int SurfaceHeight(int x, int z) const;

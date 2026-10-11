@@ -35,6 +35,9 @@ struct GLApi {
     PFNGLUSEPROGRAMPROC UseProgram = nullptr;
     PFNGLGETUNIFORMLOCATIONPROC GetUniformLocation = nullptr;
     PFNGLUNIFORMMATRIX4FVPROC UniformMatrix4fv = nullptr;
+    PFNGLUNIFORM4FPROC Uniform4f = nullptr;
+    PFNGLUNIFORM1IPROC Uniform1i = nullptr;
+    PFNGLUNIFORM1FPROC Uniform1f = nullptr;
 
     // Resolves every pointer via SDL_GL_GetProcAddress; call after creating the
     // context. On failure `error` names the missing function.
@@ -65,6 +68,9 @@ struct GLApi {
         VOXEL_LOAD_GL(UseProgram, "glUseProgram");
         VOXEL_LOAD_GL(GetUniformLocation, "glGetUniformLocation");
         VOXEL_LOAD_GL(UniformMatrix4fv, "glUniformMatrix4fv");
+        VOXEL_LOAD_GL(Uniform4f, "glUniform4f");
+        VOXEL_LOAD_GL(Uniform1i, "glUniform1i");
+        VOXEL_LOAD_GL(Uniform1f, "glUniform1f");
 #undef VOXEL_LOAD_GL
         return true;
     }

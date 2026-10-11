@@ -73,6 +73,8 @@ bool IsCave(std::uint32_t seed, int wx, int y, int wz) {
 
 }
 
+void PlaceTrees(Chunk& chunk, std::uint32_t seed);
+
 void GenerateChunk(Chunk& chunk, std::uint32_t seed) {
     const int baseX = chunk.ChunkX() * kChunkSizeX;
     const int baseZ = chunk.ChunkZ() * kChunkSizeZ;
@@ -86,14 +88,15 @@ void GenerateChunk(Chunk& chunk, std::uint32_t seed) {
             const bool lowland = height <= kSeaLevel + 1;
             const float patch = Fbm2(seed + kPatchSeed, wx / 12.0f, wz / 12.0f, 2);
 
-            // Pick the surface material and how many blocks deep it goes.
-            BlockId top = Block::Dirt;
+            // Hot deserts use red sand; mild deserts and beaches stay yellow sand.
+            const bool hotDesert = desert && Fbm2(seed + kTempSeed + 7, wx / 40.0f, wz / 40.0f, 1) > 0.55f;
+            BlockId top = Block::Grass;
             int topDepth = 1;
             BlockId filler = Block::Dirt;
             if (desert || lowland) {
-                top = Block::Sand;
+                top = hotDesert ? Block::RedSand : Block::Sand;
                 topDepth = desert ? 4 : 3;
-                filler = Block::Sand;
+                filler = top;
                 if (lowland && !desert && patch > 0.62f) {
                     top = Block::Clay;
                     filler = Block::Clay;
@@ -111,7 +114,13 @@ void GenerateChunk(Chunk& chunk, std::uint32_t seed) {
                 } else if (depth < topDepth + 3) {
                     id = filler;
                 } else {
-                    if (y > 4 && y < height - 4 && IsCave(seed, wx, y, wz)) continue;
+                    if (y > 4 && y < height - 4 && IsCave(seed, wx, y, wz)) {
+                        // Deep caves occasionally hold a lava pool instead of air.
+                        if (y < 12 && Hash01(seed + 9, wx, y, wz) > 0.72f) {
+                            chunk.Set(lx, y, lz, Block::Lava);
+                        }
+                        continue;
+                    }
                     id = OreAt(seed, wx, y, wz);
                     if (id == Block::Air) id = StoneVariant(seed, wx, y, wz);
                 }
@@ -122,16 +131,94 @@ void GenerateChunk(Chunk& chunk, std::uint32_t seed) {
                 chunk.Set(lx, y, lz, id);
             }
 
-            if (desert || lowland || top != Block::Dirt) continue;
+            if (desert && height >= kSeaLevel && top != Block::Clay) {
+                const float roll = Hash01(seed + kTreeSeed + 3, wx, 0, wz);
+                if (roll < 0.012f) {
+                    const int tall = 1 + static_cast<int>(Hash01(seed + kTreeSeed + 4, wx, 1, wz) * 3.0f);
+                    for (int i = 1; i <= tall && height + i < kChunkSizeY; ++i) {
+                        chunk.Set(lx, height + i, lz, Block::Cactus);
+                    }
+                } else if (roll < 0.05f) {
+                    chunk.Set(lx, height + 1, lz, Block::DeadBush);
+                }
+            }
+        }
+    }
 
-            // Single-column trunks keep generation chunk-local (no leaves texture yet).
+    // Ocean: every air cell from the terrain surface up to sea level becomes water.
+    for (int lz = 0; lz < kChunkSizeZ; ++lz) {
+        for (int lx = 0; lx < kChunkSizeX; ++lx) {
+            const int height = ColumnHeight(seed, baseX + lx, baseZ + lz);
+            for (int y = height + 1; y <= kSeaLevel && y < kChunkSizeY; ++y) {
+                if (chunk.Get(lx, y, lz) == Block::Air) chunk.Set(lx, y, lz, Block::Water);
+            }
+        }
+    }
+
+    // Trees are decided from world coordinates, including a margin outside this
+    // chunk, so a trunk in the neighbour still drops its leaves here.
+    PlaceTrees(chunk, seed);
+}
+
+bool IsGround(BlockId id) {
+    return id == Block::Grass || id == Block::Dirt || id == Block::GrassPath;
+}
+
+void PlaceTrees(Chunk& chunk, std::uint32_t seed) {
+    const int baseX = chunk.ChunkX() * kChunkSizeX;
+    const int baseZ = chunk.ChunkZ() * kChunkSizeZ;
+    constexpr int kMargin = 3;
+
+    for (int wz = baseZ - kMargin; wz < baseZ + kChunkSizeZ + kMargin; ++wz) {
+        for (int wx = baseX - kMargin; wx < baseX + kChunkSizeX + kMargin; ++wx) {
+            if (IsDesert(seed, wx, wz)) continue;
+            const int height = ColumnHeight(seed, wx, wz);
+            if (height < kSeaLevel) continue;
             const float roll = Hash01(seed + kTreeSeed, wx, 0, wz);
-            if (roll < 0.012f) {
-                const int trunk = 4 + static_cast<int>(Hash01(seed + kTreeSeed + 1, wx, 1, wz) * 3.0f);
+            if (roll >= 0.018f) continue;
+
+            const int trunk = 4 + static_cast<int>(Hash01(seed + kTreeSeed + 1, wx, 1, wz) * 3.0f);
+            const bool inside = wx >= baseX && wx < baseX + kChunkSizeX &&
+                                wz >= baseZ && wz < baseZ + kChunkSizeZ;
+            if (inside) {
+                const int lx = wx - baseX;
+                const int lz = wz - baseZ;
+                if (!IsGround(chunk.Get(lx, height, lz))) continue;
                 for (int i = 1; i <= trunk && height + i < kChunkSizeY; ++i) {
                     chunk.Set(lx, height + i, lz, Block::OakLog);
                 }
-            } else if (roll < 0.05f) {
+            }
+
+            // Canopy: a 5x5 blob, shorter at the top corners, never replacing the trunk.
+            for (int dy = trunk - 2; dy <= trunk + 1; ++dy) {
+                const int radius = dy >= trunk ? 1 : 2;
+                for (int dz = -radius; dz <= radius; ++dz) {
+                    for (int dx = -radius; dx <= radius; ++dx) {
+                        if (dx == 0 && dz == 0 && dy <= trunk) continue;
+                        if (std::abs(dx) == radius && std::abs(dz) == radius &&
+                            Hash01(seed + 8, wx + dx, dy, wz + dz) > 0.65f) continue;
+                        const int lx = wx + dx - baseX;
+                        const int lz = wz + dz - baseZ;
+                        const int y = height + dy;
+                        if (lx < 0 || lx >= kChunkSizeX || lz < 0 || lz >= kChunkSizeZ) continue;
+                        if (y < 0 || y >= kChunkSizeY) continue;
+                        if (chunk.Get(lx, y, lz) == Block::Air) chunk.Set(lx, y, lz, Block::OakLeaves);
+                    }
+                }
+            }
+        }
+    }
+
+    // Saplings sit on grass that did not grow a tree.
+    for (int lz = 0; lz < kChunkSizeZ; ++lz) {
+        for (int lx = 0; lx < kChunkSizeX; ++lx) {
+            const int wx = baseX + lx;
+            const int wz = baseZ + lz;
+            if (IsDesert(seed, wx, wz)) continue;
+            const int height = ColumnHeight(seed, wx, wz);
+            if (chunk.Get(lx, height, lz) != Block::Grass) continue;
+            if (chunk.Get(lx, height + 1, lz) != Block::Air) continue;
+            if (Hash01(seed + kTreeSeed + 5, wx, 0, wz) < 0.02f) {
                 chunk.Set(lx, height + 1, lz, Block::OakSapling);
             }
         }
