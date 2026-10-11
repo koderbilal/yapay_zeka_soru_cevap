@@ -1,12 +1,15 @@
 #include "player/Camera.h"
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/constants.hpp>
 
 #include <algorithm>
 #include <cmath>
 
 namespace voxel {
+
+Camera::Camera() {
+    UpdateFront();
+}
 
 glm::mat4 Camera::GetViewMatrix() const {
     return glm::lookAt(Position, Position + Front, Up);
@@ -40,9 +43,8 @@ void Camera::Move(CameraMove direction, float deltaTime) {
 }
 
 void Camera::ProcessMouseMovement(float xOffset, float yOffset) {
-    constexpr float sensitivity = 0.1f;
-    Yaw += xOffset * sensitivity;
-    Pitch = std::clamp(Pitch + yOffset * sensitivity, -89.0f, 89.0f);
+    Yaw += xOffset * Sensitivity;
+    Pitch = std::clamp(Pitch + yOffset * Sensitivity, -89.0f, 89.0f);
     UpdateFront();
 }
 

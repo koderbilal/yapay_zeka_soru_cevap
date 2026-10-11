@@ -6,10 +6,11 @@
 #include <SDL.h>
 #include <SDL_opengl.h>
 
-#ifdef VOXELENGINE_HAS_STB_IMAGE
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#endif
 
 #include <array>
 #include <algorithm>
@@ -76,28 +77,23 @@ Image MakePlaceholderTexture() {
 
 Image LoadDirtTexture() {
     const auto bytes = voxel::ReadFile("assets/textures/blocks/dirt.png");
-#ifdef VOXELENGINE_HAS_STB_IMAGE
     if (!bytes.empty() && bytes.size() <= static_cast<std::size_t>(INT_MAX)) {
         Image image;
+        stbi_set_flip_vertically_on_load(1);
         unsigned char* decoded = stbi_load_from_memory(
             bytes.data(), static_cast<int>(bytes.size()),
             &image.width, &image.height, nullptr, 4);
         if (decoded != nullptr) {
             image.pixels.assign(
                 decoded,
-                decoded + static_cast<std::size_t>(image.width * image.height * 4));
+                decoded + static_cast<std::size_t>(image.width) * image.height * 4);
             stbi_image_free(decoded);
-            std::cout << "Loaded Bedrock dirt texture ("
+            std::cout << "Loaded dirt texture ("
                       << image.width << "x" << image.height << ").\n";
             return image;
         }
         std::cerr << "Could not decode dirt.png; using the placeholder texture.\n";
     }
-#else
-    if (!bytes.empty()) {
-        std::cerr << "stb_image.h is needed to load dirt.png; using the placeholder texture.\n";
-    }
-#endif
     if (bytes.empty()) {
         std::cerr << "No dirt.png found; using the placeholder texture.\n";
     }
@@ -195,7 +191,7 @@ int main() {
                     std::cerr << "Could not create the cube texture.\n";
                     result = 1;
                 } else {
-                    gl.Enable(GL_DEPTH_TEST);
+                    glEnable(GL_DEPTH_TEST);
                     SDL_GL_SetSwapInterval(1);
                     SDL_SetRelativeMouseMode(SDL_TRUE);
 
@@ -213,7 +209,8 @@ int main() {
                         while (SDL_PollEvent(&event)) {
                             if (event.type == SDL_QUIT) {
                                 running = false;
-                            } else if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
+                            } else if (event.type == SDL_KEYDOWN && event.key.repeat == 0 &&
+                                       event.key.keysym.scancode == SDL_SCANCODE_ESCAPE) {
                                 mouseCaptured = !mouseCaptured;
                                 SDL_SetRelativeMouseMode(mouseCaptured ? SDL_TRUE : SDL_FALSE);
                             } else if (event.type == SDL_MOUSEBUTTONDOWN && !mouseCaptured) {

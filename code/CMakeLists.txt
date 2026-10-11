@@ -8,8 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)
-find_package(glm CONFIG REQUIRED)
-find_path(STB_IMAGE_INCLUDE_DIR stb_image.h PATH_SUFFIXES stb)
+find_package(glm CONFIG QUIET)
 
 file(GLOB_RECURSE VOXEL_ENGINE_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
@@ -18,6 +17,7 @@ file(GLOB_RECURSE VOXEL_ENGINE_SOURCES CONFIGURE_DEPENDS
 add_executable(VoxelEngine ${VOXEL_ENGINE_SOURCES})
 target_include_directories(VoxelEngine PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 target_compile_definitions(VoxelEngine PRIVATE SDL_MAIN_HANDLED)
 
@@ -31,16 +31,14 @@ endif()
 if(TARGET glm::glm)
     target_link_libraries(VoxelEngine PRIVATE glm::glm)
 else()
-    target_include_directories(VoxelEngine PRIVATE ${GLM_INCLUDE_DIRS})
+    find_path(GLM_INCLUDE_DIR glm/glm.hpp REQUIRED)
+    target_include_directories(VoxelEngine PRIVATE ${GLM_INCLUDE_DIR})
 endif()
 
 target_link_libraries(VoxelEngine PRIVATE OpenGL::GL)
 
-if(STB_IMAGE_INCLUDE_DIR)
-    target_include_directories(VoxelEngine PRIVATE "${STB_IMAGE_INCLUDE_DIR}")
-    target_compile_definitions(VoxelEngine PRIVATE VOXELENGINE_HAS_STB_IMAGE=1)
-else()
-    message(WARNING "stb_image.h was not found; a generated placeholder texture will be used.")
-endif()
-
-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+add_custom_target(CopyAssets ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+        "${CMAKE_CURRENT_BINARY_DIR}/assets"
+)
