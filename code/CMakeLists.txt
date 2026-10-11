@@ -19,6 +19,7 @@ add_executable(VoxelEngine ${VOXEL_ENGINE_SOURCES})
 target_include_directories(VoxelEngine PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
+target_compile_definitions(VoxelEngine PRIVATE SDL_MAIN_HANDLED)
 
 if(TARGET SDL2::SDL2)
     target_link_libraries(VoxelEngine PRIVATE SDL2::SDL2)

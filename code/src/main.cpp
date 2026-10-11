@@ -3,8 +3,8 @@
 #include "render/GLApi.h"
 #include "render/Shader.h"
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
+#include <SDL.h>
+#include <SDL_opengl.h>
 
 #ifdef VOXELENGINE_HAS_STB_IMAGE
 #define STB_IMAGE_IMPLEMENTATION
@@ -132,6 +132,7 @@ void MoveCamera(voxel::Camera& camera, const Uint8* keys, float deltaTime) {
 }
 
 int main() {
+    SDL_SetMainReady();
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cerr << "SDL initialization failed: " << SDL_GetError() << '\n';
         return 1;
